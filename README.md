@@ -29,9 +29,7 @@ Agent Eval Lab gives you the smallest useful loop around that question — datas
 
 ---
 
-## What works now (M1)
-
-Scaffold only — no runtime eval yet. What is present and functional:
+## What works now (M2)
 
 | Item | Status |
 |---|---|
@@ -44,6 +42,19 @@ Scaffold only — no runtime eval yet. What is present and functional:
 | CLI entry point stub (`agent-eval` via typer) | done |
 | MIT license | done |
 | `make demo` | prints "Demo coming in M7" |
+| **SQLModel data model** (Suite, EvalCase, Rubric, AgentVersion, Run, CaseResult, Score) | **done** |
+| **SQLite persistence** via `SQLModel.metadata.create_all` | **done** |
+| **Seed script** — loads `customer_support` suite (5 cases) + rubric (4 criteria) from YAML | **done** |
+
+### Init DB + seed
+
+```bash
+# Create tables
+python -m agent_eval_lab.db
+
+# Populate with sample data (idempotent)
+python scripts/seed.py
+```
 
 ---
 
@@ -80,7 +91,7 @@ flowchart LR
 ## Roadmap
 
 - [x] M1 — scaffold + readme
-- [ ] M2 — data model (SQLModel + Alembic migrations)
+- [x] M2 — data model (SQLModel + SQLite persistence + seed data)
 - [ ] M3 — agent adapters (HTTP + Python callable)
 - [ ] M4 — deterministic scorers (regex, JSON schema, tool-call sequence)
 - [ ] M5 — LLM-as-judge scorer (Claude + GPT)

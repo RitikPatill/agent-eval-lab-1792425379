@@ -9,7 +9,10 @@ description = "Self-hosted, UI-first evaluation harness for AI agents"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "sqlmodel>=0.0.21",
+    "pyyaml>=6.0.2",
+]
 
 [project.scripts]
 agent-eval = "agent_eval_lab.cli:app"
