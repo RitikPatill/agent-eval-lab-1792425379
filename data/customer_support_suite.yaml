@@ -1,0 +1,39 @@
+suite:
+  name: customer_support
+  description: "Basic customer-support agent evaluation suite"
+
+cases:
+  - input:
+      role: user
+      content: "My order hasn't arrived after 2 weeks."
+    expected:
+      contains: ["apologize", "order number", "investigate"]
+    tags: ["complaint", "shipping"]
+
+  - input:
+      role: user
+      content: "I want a refund for the broken headphones I received."
+    expected:
+      contains: ["refund", "return", "process"]
+    tags: ["refund", "damaged_product"]
+
+  - input:
+      role: user
+      content: "This is absolutely unacceptable! I've been waiting a month and nobody helps me!"
+    expected:
+      contains: ["understand", "frustration", "escalate"]
+    tags: ["angry", "escalation"]
+
+  - input:
+      role: user
+      content: "Do your wireless earbuds support active noise cancellation?"
+    expected:
+      contains: ["noise cancellation", "model", "specifications"]
+    tags: ["product_faq", "features"]
+
+  - input:
+      role: user
+      content: "I need to speak to a manager immediately."
+    expected:
+      contains: ["manager", "escalate", "help"]
+    tags: ["escalation", "complaint"]

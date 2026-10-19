@@ -1,0 +1,15 @@
+rubric:
+  name: customer_support_v1
+
+criteria:
+  - name: helpful
+    guidance: "1=unhelpful/ignores issue, 3=addresses issue partially, 5=fully resolves or gives clear next steps"
+
+  - name: correct
+    guidance: "1=factually wrong, 3=mostly right with minor errors, 5=accurate and complete"
+
+  - name: polite
+    guidance: "1=rude or dismissive, 3=neutral, 5=warm, empathetic, professional"
+
+  - name: concise
+    guidance: "1=verbose rambling, 3=acceptable length, 5=tight and on-point"
