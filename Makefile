@@ -1,4 +1,4 @@
-.PHONY: dev test lint typecheck demo
+.PHONY: dev test lint typecheck demo ui
 
 dev:
 	pip install -e ".[dev]"
@@ -13,5 +13,10 @@ lint:
 typecheck:
 	mypy src/
 
+ui:
+	streamlit run src/agent_eval_lab/ui.py
+
 demo:
-	@echo "Demo coming in M7. Run 'make dev' first."
+	@echo "Starting API server and Streamlit UI..."
+	uvicorn agent_eval_lab.api:app --reload --port 8000 &
+	streamlit run src/agent_eval_lab/ui.py

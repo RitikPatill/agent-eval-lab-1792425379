@@ -4,7 +4,7 @@ from collections.abc import Generator
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException
 from sqlmodel import Session, select
 
 from agent_eval_lab.db import get_session, init_db
@@ -181,8 +181,18 @@ def list_runs(session: SessionDep, status: str | None = None) -> list[RunSchema]
     ]
 
 
+def _execute_run_bg(run_id: int) -> None:
+    """Fresh session for background task (request session is already closed)."""
+    from agent_eval_lab.db import engine  # noqa: PLC0415
+    from agent_eval_lab.runner import execute_run  # noqa: PLC0415
+    from sqlmodel import Session  # noqa: PLC0415
+
+    with Session(engine) as session:
+        execute_run(run_id, session)
+
+
 @app.post("/runs", response_model=RunSchema, status_code=201)
-def create_run(body: RunCreate, session: SessionDep) -> RunSchema:
+def create_run(body: RunCreate, session: SessionDep, background_tasks: BackgroundTasks) -> RunSchema:
     # Validate FKs exist
     if session.get(Suite, body.suite_id) is None:
         raise HTTPException(status_code=404, detail="Suite not found")
@@ -200,6 +210,7 @@ def create_run(body: RunCreate, session: SessionDep) -> RunSchema:
     session.add(run)
     session.commit()
     session.refresh(run)
+    background_tasks.add_task(_execute_run_bg, run.id)
     return RunSchema(
         id=run.id,  # type: ignore[arg-type]
         suite_id=run.suite_id,

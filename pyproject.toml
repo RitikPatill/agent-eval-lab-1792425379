@@ -18,6 +18,9 @@ dependencies = [
     "typer>=0.13",
     "anthropic>=0.40",
     "jsonschema>=4.23",
+    "streamlit>=1.40",
+    "plotly>=5.24",
+    "pandas>=2.2",
 ]
 
 [project.scripts]

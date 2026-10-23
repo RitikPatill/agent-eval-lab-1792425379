@@ -29,7 +29,7 @@ Agent Eval Lab gives you the smallest useful loop around that question — datas
 
 ---
 
-## What works now (M4)
+## What works now (M5)
 
 | Item | Status |
 |---|---|
@@ -41,7 +41,7 @@ Agent Eval Lab gives you the smallest useful loop around that question — datas
 | Pre-commit hooks (ruff + mypy on commit) | done |
 | CLI entry point (`agent-eval run --suite … --agent … --rubric …`) | done |
 | MIT license | done |
-| `make demo` | prints "Demo coming in M7" |
+| `make demo` — starts API (port 8000) + Streamlit UI (port 8501) | **done** |
 | **SQLModel data model** (Suite, EvalCase, Rubric, AgentVersion, Run, CaseResult, Score) | **done** |
 | **SQLite persistence** via `SQLModel.metadata.create_all` | **done** |
 | **Seed script** — loads `customer_support` suite (5 cases) + rubric (4 criteria) from YAML | **done** |
@@ -54,12 +54,29 @@ Agent Eval Lab gives you the smallest useful loop around that question — datas
 | **LLM-as-judge scorer** — calls Claude (configurable via `JUDGE_MODEL` env var) with structured rubric prompt, returns 1–5 score + reasoning | **done** |
 | **Deterministic scorers** — `regex` (pattern or `expected.contains`), `json_schema` (jsonschema validation), `tool_call_sequence` (subsequence check) | **done** |
 | **Parallel scoring** — criteria scored concurrently via `ThreadPoolExecutor`; DB writes stay on main thread | **done** |
+| **Streamlit UI** — sidebar nav (Suites / Rubrics / Agents / Runs), dataset browser, Launch Run form | **done** |
+| **Live progress bar** — polls `GET /runs/{id}` every 2 s while a run executes | **done** |
+| **Plotly heatmap** — rows = case IDs, columns = rubric criteria, colour = score 1–5 (RdYlGn) | **done** |
+| **Background execution** — `POST /runs` fires `execute_run` via FastAPI `BackgroundTasks` | **done** |
 
 ### Run the API
 
 ```bash
 uvicorn agent_eval_lab.api:app --reload
 # → http://localhost:8000/docs
+```
+
+### Run the Streamlit UI
+
+```bash
+make ui
+# → http://localhost:8501
+```
+
+Or start both together:
+
+```bash
+make demo
 ```
 
 ### Init DB + seed
@@ -90,11 +107,11 @@ make lint     # lint + autofix with ruff
 make typecheck  # mypy strict check
 ```
 
-`make demo` is a no-op until M7 (Streamlit UI).
+`make demo` starts both the FastAPI server (port 8000) and the Streamlit UI (port 8501).
 
 ---
 
-## Architecture (M1–M4 implemented; M6–M9 planned)
+## Architecture (M1–M5 implemented; M6+ planned)
 
 ```mermaid
 flowchart LR
@@ -116,10 +133,8 @@ flowchart LR
 - [x] M2 — data model (SQLModel + SQLite persistence + seed data)
 - [x] M3 — FastAPI backend + agent adapters (HTTP + Python callable) + CLI runner
 - [x] M4 — LLM-as-judge (Claude) + deterministic scorers (regex, JSON schema, tool-call sequence); parallel scoring wired into runner
-- [ ] M5 — (merged into M4)
-- [ ] M6 — (merged into M3)
-- [ ] M7 — Streamlit UI (dataset browser, run launcher, heatmap)
-- [ ] M8 — A/B diff view + trace drawer
+- [x] M5 — Streamlit UI: dataset browser, run launcher with live progress bar, Plotly score heatmap
+- [ ] M6 — A/B diff view + trace drawer
 - [ ] M9 — demo suite (customer-support bot + 20 test cases)
 
 ---
