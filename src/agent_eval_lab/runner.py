@@ -7,15 +7,16 @@ from datetime import datetime, timezone
 from sqlmodel import Session, select
 
 from agent_eval_lab.adapters import get_adapter
-from agent_eval_lab.models import AgentVersion, CaseResult, EvalCase, Run
+from agent_eval_lab.models import AgentVersion, CaseResult, EvalCase, Rubric, Run
+from agent_eval_lab.scorers import score_case_result
 
 logger = logging.getLogger(__name__)
 
 
 def execute_run(run_id: int, session: Session) -> None:
-    """Load run → iterate suite cases → call adapter → persist CaseResult.
+    """Load run → iterate suite cases → call adapter → persist CaseResult → score.
 
-    Does NOT score (that's M4). Sets run.status = "running" then "done"/"failed".
+    Sets run.status = "running" then "done"/"failed".
     """
     run = session.get(Run, run_id)
     if run is None:
@@ -62,6 +63,21 @@ def execute_run(run_id: int, session: Session) -> None:
             session.add(cr)
 
         session.commit()
+
+        rubric = session.get(Rubric, run.rubric_id)
+        if rubric:
+            criteria = rubric.criteria
+            results = session.exec(
+                select(CaseResult).where(CaseResult.run_id == run.id)
+            ).all()
+            for cr in results:
+                case = session.get(EvalCase, cr.case_id)
+                if case is not None:
+                    try:
+                        score_case_result(cr, case, criteria, session)
+                    except Exception:
+                        logger.exception("Scoring failed for case_result %s", cr.id)
+
         run.status = "done"
     except Exception:
         logger.exception("Run %s failed", run_id)

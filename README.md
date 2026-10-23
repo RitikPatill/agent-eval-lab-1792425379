@@ -29,7 +29,7 @@ Agent Eval Lab gives you the smallest useful loop around that question — datas
 
 ---
 
-## What works now (M3)
+## What works now (M4)
 
 | Item | Status |
 |---|---|
@@ -50,7 +50,10 @@ Agent Eval Lab gives you the smallest useful loop around that question — datas
 | **Pydantic API schemas** — typed request bodies and response shapes for all endpoints | **done** |
 | **HTTPAdapter** — POST JSON to any HTTP agent endpoint; tolerates `response`, `message`, or turns shapes | **done** |
 | **PythonAdapter** — dynamically imports a `module:callable` and calls it in-process | **done** |
-| **Eval runner** — `execute_run()` iterates suite cases, calls adapter, persists `CaseResult`; scoring deferred to M4 | **done** |
+| **Eval runner** — `execute_run()` iterates suite cases, calls adapter, persists `CaseResult` + `Score` rows | **done** |
+| **LLM-as-judge scorer** — calls Claude (configurable via `JUDGE_MODEL` env var) with structured rubric prompt, returns 1–5 score + reasoning | **done** |
+| **Deterministic scorers** — `regex` (pattern or `expected.contains`), `json_schema` (jsonschema validation), `tool_call_sequence` (subsequence check) | **done** |
+| **Parallel scoring** — criteria scored concurrently via `ThreadPoolExecutor`; DB writes stay on main thread | **done** |
 
 ### Run the API
 
@@ -91,7 +94,7 @@ make typecheck  # mypy strict check
 
 ---
 
-## Architecture (M1–M3 implemented; M4–M9 planned)
+## Architecture (M1–M4 implemented; M6–M9 planned)
 
 ```mermaid
 flowchart LR
@@ -112,8 +115,8 @@ flowchart LR
 - [x] M1 — scaffold + readme
 - [x] M2 — data model (SQLModel + SQLite persistence + seed data)
 - [x] M3 — FastAPI backend + agent adapters (HTTP + Python callable) + CLI runner
-- [ ] M4 — deterministic scorers (regex, JSON schema, tool-call sequence)
-- [ ] M5 — LLM-as-judge scorer (Claude + GPT)
+- [x] M4 — LLM-as-judge (Claude) + deterministic scorers (regex, JSON schema, tool-call sequence); parallel scoring wired into runner
+- [ ] M5 — (merged into M4)
 - [ ] M6 — (merged into M3)
 - [ ] M7 — Streamlit UI (dataset browser, run launcher, heatmap)
 - [ ] M8 — A/B diff view + trace drawer
