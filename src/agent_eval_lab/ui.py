@@ -1,6 +1,7 @@
 """Streamlit UI for Agent Eval Lab."""
 from __future__ import annotations
 
+import json
 import os
 import time
 from typing import Any
@@ -76,9 +77,72 @@ def _build_heatmap_df(run_detail: dict) -> pd.DataFrame:  # type: ignore[type-ar
     return df
 
 
+def _build_compare_df(run_a: dict, run_b: dict) -> pd.DataFrame:  # type: ignore[type-arg]
+    """Return long-form DataFrame with columns: case_id, criterion, score_a, score_b, delta.
+
+    Only includes cases present in BOTH runs (inner join semantics).
+    """
+
+    def _scores_by_case(run: dict) -> dict[str, dict[str, float]]:  # type: ignore[type-arg]
+        result: dict[str, dict[str, float]] = {}
+        for cr in run.get("case_results", []):
+            cid = str(cr["case_id"])
+            if cid not in result:
+                result[cid] = {}
+            for score in cr.get("scores", []):
+                result[cid][score["criterion"]] = float(score["value"])
+        return result
+
+    scores_a = _scores_by_case(run_a)
+    scores_b = _scores_by_case(run_b)
+    common_cases = set(scores_a.keys()) & set(scores_b.keys())
+
+    rows = []
+    for cid in sorted(common_cases):
+        all_criteria = set(scores_a[cid].keys()) | set(scores_b[cid].keys())
+        for criterion in sorted(all_criteria):
+            sa = scores_a[cid].get(criterion, float("nan"))
+            sb = scores_b[cid].get(criterion, float("nan"))
+            import math
+
+            delta = (sb - sa) if not (math.isnan(sa) or math.isnan(sb)) else float("nan")
+            rows.append({"case_id": cid, "criterion": criterion, "score_a": sa, "score_b": sb, "delta": delta})
+
+    return pd.DataFrame(rows, columns=["case_id", "criterion", "score_a", "score_b", "delta"])
+
+
 # ---------------------------------------------------------------------------
 # Pages
 # ---------------------------------------------------------------------------
+
+
+def _render_trace_drawer(case_result: dict, criteria: list[str]) -> None:  # type: ignore[type-arg]
+    """Render turns, tool calls, output, latency/token stats, and per-criterion scores+reasoning."""
+    st.caption(f"Latency: {case_result.get('latency_ms', '?')} ms | Tokens: {case_result.get('tokens', '?')}")
+
+    turns = json.loads(case_result.get("trace_json") or "[]")
+    if turns:
+        st.subheader("Turns")
+        for turn in turns:
+            role = turn.get("role", "assistant")
+            content = turn.get("content", "")
+            with st.chat_message(role):
+                st.write(content)
+                for tc in turn.get("tool_calls") or []:
+                    st.json(tc)
+    else:
+        st.info("No trace recorded for this case.")
+
+    scores = case_result.get("scores", [])
+    if scores:
+        st.subheader("Scores & Reasoning")
+        for score in scores:
+            criterion = score.get("criterion", "?")
+            value = score.get("value", 0)
+            reasoning = score.get("reasoning", "")
+            st.metric(criterion, f"{value:.1f}/5")
+            if reasoning:
+                st.caption(reasoning)
 
 
 def page_suites() -> None:
@@ -217,6 +281,106 @@ def page_runs() -> None:
             )
             st.plotly_chart(fig, use_container_width=True)
 
+            # Case inspector
+            case_results = run_detail.get("case_results", [])
+            case_ids = [str(cr["case_id"]) for cr in case_results]
+            if case_ids:
+                st.subheader("Inspect a Case")
+                selected_case = st.selectbox(
+                    "Select case:",
+                    options=case_ids,
+                    key="selected_case_id",
+                )
+                matched = next((cr for cr in case_results if str(cr["case_id"]) == selected_case), None)
+                if matched:
+                    _render_trace_drawer(matched, list(df.columns))
+
+
+def page_compare() -> None:
+    st.header("Compare Runs")
+
+    all_runs = _get("/runs")
+    if not all_runs or len(all_runs) < 2:
+        st.info("Need at least two runs to compare.")
+        return
+
+    run_labels = {f"Run {r['id']} — {r['status']}": r["id"] for r in all_runs}
+    label_list = list(run_labels.keys())
+
+    col1, col2 = st.columns(2)
+    with col1:
+        label_a = st.selectbox("Run A (baseline)", label_list, key="compare_run_a")
+    with col2:
+        label_b = st.selectbox("Run B (new)", label_list, index=min(1, len(label_list) - 1), key="compare_run_b")
+
+    if st.button("Load comparison"):
+        st.session_state["_compare_run_a_detail"] = _get(f"/runs/{run_labels[label_a]}")
+        st.session_state["_compare_run_b_detail"] = _get(f"/runs/{run_labels[label_b]}")
+
+    run_a_detail = st.session_state.get("_compare_run_a_detail")
+    run_b_detail = st.session_state.get("_compare_run_b_detail")
+
+    if not run_a_detail or not run_b_detail:
+        st.info("Select two runs and click **Load comparison**.")
+        return
+
+    compare_df = _build_compare_df(run_a_detail, run_b_detail)
+    if compare_df.empty:
+        st.warning("No overlapping cases between the two runs.")
+        return
+
+    # Summary delta table
+    st.subheader("Delta Summary (Run B − Run A)")
+    summary = compare_df.groupby("criterion")[["score_a", "score_b", "delta"]].mean().round(2)
+    st.dataframe(summary, use_container_width=True)
+
+    # Delta heatmap
+    pivot = compare_df.pivot(index="case_id", columns="criterion", values="delta")
+    text_vals = [[f"{v:+.1f}" if v == v else "" for v in row] for row in pivot.values.tolist()]  # noqa: PLR0124
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=pivot.values.tolist(),
+            x=list(pivot.columns),
+            y=list(pivot.index),
+            zmin=-4,
+            zmid=0,
+            zmax=4,
+            colorscale="RdYlGn",
+            colorbar={"title": "Delta"},
+            text=text_vals,
+            texttemplate="%{text}",
+        )
+    )
+    fig.update_layout(
+        title=f"Run {run_labels[label_a]} vs Run {run_labels[label_b]} — Score Deltas",
+        xaxis_title="Criterion",
+        yaxis_title="Case ID",
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Side-by-side case inspector
+    st.subheader("Inspect a Case Side-by-Side")
+    case_ids = list(pivot.index)
+    selected_case = st.selectbox("Select case:", options=case_ids, key="compare_selected_case")
+
+    cr_a = next((cr for cr in run_a_detail.get("case_results", []) if str(cr["case_id"]) == selected_case), None)
+    cr_b = next((cr for cr in run_b_detail.get("case_results", []) if str(cr["case_id"]) == selected_case), None)
+
+    criteria = list(pivot.columns)
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.markdown(f"**Run A** (id={run_labels[label_a]})")
+        if cr_a:
+            _render_trace_drawer(cr_a, criteria)
+        else:
+            st.info("No result for this case in Run A.")
+    with col_b:
+        st.markdown(f"**Run B** (id={run_labels[label_b]})")
+        if cr_b:
+            _render_trace_drawer(cr_b, criteria)
+        else:
+            st.info("No result for this case in Run B.")
+
 
 # ---------------------------------------------------------------------------
 # Entry point
@@ -225,12 +389,13 @@ def page_runs() -> None:
 
 def main() -> None:
     st.set_page_config(page_title="Agent Eval Lab", layout="wide")
-    page = st.sidebar.radio("Navigate", ["Suites", "Rubrics", "Agents", "Runs"])
+    page = st.sidebar.radio("Navigate", ["Suites", "Rubrics", "Agents", "Runs", "Compare"])
     {
         "Suites": page_suites,
         "Rubrics": page_rubrics,
         "Agents": page_agents,
         "Runs": page_runs,
+        "Compare": page_compare,
     }[page]()
 
 

@@ -29,7 +29,7 @@ Agent Eval Lab gives you the smallest useful loop around that question — datas
 
 ---
 
-## What works now (M5)
+## What works now (M6)
 
 | Item | Status |
 |---|---|
@@ -58,6 +58,8 @@ Agent Eval Lab gives you the smallest useful loop around that question — datas
 | **Live progress bar** — polls `GET /runs/{id}` every 2 s while a run executes | **done** |
 | **Plotly heatmap** — rows = case IDs, columns = rubric criteria, colour = score 1–5 (RdYlGn) | **done** |
 | **Background execution** — `POST /runs` fires `execute_run` via FastAPI `BackgroundTasks` | **done** |
+| **Trace drawer** — select any case from the heatmap to inspect agent turns, tool calls, latency/token stats, and per-criterion scores + judge reasoning | **done** |
+| **Compare page** — pick two runs, view a diverging delta heatmap (RdYlGn, red = regression), side-by-side trace inspector for any case | **done** |
 
 ### Run the API
 
@@ -111,7 +113,7 @@ make typecheck  # mypy strict check
 
 ---
 
-## Architecture (M1–M5 implemented; M6+ planned)
+## Architecture (M1–M6 implemented)
 
 ```mermaid
 flowchart LR
@@ -134,7 +136,7 @@ flowchart LR
 - [x] M3 — FastAPI backend + agent adapters (HTTP + Python callable) + CLI runner
 - [x] M4 — LLM-as-judge (Claude) + deterministic scorers (regex, JSON schema, tool-call sequence); parallel scoring wired into runner
 - [x] M5 — Streamlit UI: dataset browser, run launcher with live progress bar, Plotly score heatmap
-- [ ] M6 — A/B diff view + trace drawer
+- [x] M6 — trace drawer + A/B compare view
 - [ ] M9 — demo suite (customer-support bot + 20 test cases)
 
 ---
