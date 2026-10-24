@@ -1,8 +1,9 @@
 suite:
   name: customer_support
-  description: "Basic customer-support agent evaluation suite"
+  description: "Customer-support agent evaluation suite — 20 realistic cases"
 
 cases:
+  # --- original 5 cases ---
   - input:
       role: user
       content: "My order hasn't arrived after 2 weeks."
@@ -37,3 +38,109 @@ cases:
     expected:
       contains: ["manager", "escalate", "help"]
     tags: ["escalation", "complaint"]
+
+  # --- 15 new cases ---
+  - input:
+      role: user
+      content: "You denied my refund request but the item was clearly defective."
+    expected:
+      contains: ["review", "defective", "policy"]
+    tags: ["refund", "complaint"]
+
+  - input:
+      role: user
+      content: "My account is locked and I can't log in."
+    expected:
+      contains: ["reset", "password", "account"]
+    tags: ["account", "login"]
+
+  - input:
+      role: user
+      content: "I was charged twice for the same order this month."
+    expected:
+      contains: ["billing", "charge", "refund"]
+    tags: ["billing", "dispute"]
+
+  - input:
+      role: user
+      content: "The tracking says my package was delivered but I never received it."
+    expected:
+      contains: ["investigate", "carrier", "lost"]
+    tags: ["shipping", "lost_package"]
+
+  - input:
+      role: user
+      content: "I received the wrong item in my delivery."
+    expected:
+      contains: ["return", "replacement", "sorry"]
+    tags: ["wrong_item", "shipping"]
+
+  - input:
+      role: user
+      content: "The product arrived with a cracked screen."
+    expected:
+      contains: ["damaged", "replacement", "return"]
+    tags: ["damaged_product", "shipping"]
+
+  - input:
+      role: user
+      content: "I want to cancel my monthly subscription immediately."
+    expected:
+      contains: ["cancel", "subscription", "confirm"]
+    tags: ["subscription", "cancellation"]
+
+  - input:
+      role: user
+      content: "I forgot my password and the reset email isn't arriving."
+    expected:
+      contains: ["reset", "email", "spam"]
+    tags: ["account", "password_reset"]
+
+  - input:
+      role: user
+      content: "The item I ordered shows as out of stock after I already paid."
+    expected:
+      contains: ["refund", "alternative", "availability"]
+    tags: ["product_unavailable", "order"]
+
+  - input:
+      role: user
+      content: "Can I change the delivery address for my order placed an hour ago?"
+    expected:
+      contains: ["address", "update", "order"]
+    tags: ["order_modification", "shipping"]
+
+  - input:
+      role: user
+      content: "I need to update my shipping address before my order ships."
+    expected:
+      contains: ["address", "update", "order"]
+    tags: ["order_modification", "shipping"]
+
+  - input:
+      role: user
+      content: "How many loyalty points do I have and when do they expire?"
+    expected:
+      contains: ["points", "balance", "expiry"]
+    tags: ["loyalty", "account"]
+
+  - input:
+      role: user
+      content: "I already contacted you three times about this and nothing has been fixed."
+    expected:
+      contains: ["apologize", "priority", "resolve"]
+    tags: ["repeat_complaint", "escalation"]
+
+  - input:
+      role: user
+      content: "I want this escalated to your complaints department right now."
+    expected:
+      contains: ["escalate", "complaints", "contact"]
+    tags: ["escalation", "complaint"]
+
+  - input:
+      role: user
+      content: "My smart speaker keeps disconnecting from Wi-Fi after the latest update."
+    expected:
+      contains: ["technical", "support", "troubleshoot"]
+    tags: ["tech_support", "product_issue"]

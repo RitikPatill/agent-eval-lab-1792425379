@@ -1,0 +1,11 @@
+rubric:
+  name: json_extraction_v1
+
+criteria:
+  - name: valid_json_schema
+    type: json_schema
+    guidance: "Output must be a JSON object matching the expected schema. Score 5 if valid, 1 if not."
+
+  - name: completeness
+    type: llm_judge
+    guidance: "1=missing most required fields, 3=partially complete with some fields extracted accurately, 5=all required data extracted accurately with correct types"
