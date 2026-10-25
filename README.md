@@ -29,7 +29,7 @@ Agent Eval Lab gives you the smallest useful loop around that question — datas
 
 ---
 
-## What works now (M6)
+## What works now (M7)
 
 | Item | Status |
 |---|---|
@@ -44,7 +44,7 @@ Agent Eval Lab gives you the smallest useful loop around that question — datas
 | `make demo` — starts API (port 8000) + Streamlit UI (port 8501) | **done** |
 | **SQLModel data model** (Suite, EvalCase, Rubric, AgentVersion, Run, CaseResult, Score) | **done** |
 | **SQLite persistence** via `SQLModel.metadata.create_all` | **done** |
-| **Seed script** — loads `customer_support` suite (5 cases) + rubric (4 criteria) from YAML | **done** |
+| **Seed script** — loads both sample suites + both agent versions from YAML (idempotent) | **done** |
 | **FastAPI backend** — `/suites`, `/rubrics`, `/agents`, `/runs` CRUD endpoints | **done** |
 | **AgentOutput schema** (Pydantic) — normalised turns, tool calls, final response, latency, token count | **done** |
 | **Pydantic API schemas** — typed request bodies and response shapes for all endpoints | **done** |
@@ -60,6 +60,10 @@ Agent Eval Lab gives you the smallest useful loop around that question — datas
 | **Background execution** — `POST /runs` fires `execute_run` via FastAPI `BackgroundTasks` | **done** |
 | **Trace drawer** — select any case from the heatmap to inspect agent turns, tool calls, latency/token stats, and per-criterion scores + judge reasoning | **done** |
 | **Compare page** — pick two runs, view a diverging delta heatmap (RdYlGn, red = regression), side-by-side trace inspector for any case | **done** |
+| **`examples/` — LangGraph customer-support agent** in two versions: `v1_brusque` (terse) and `v2_polite` (empathetic), wired as Python-callable agents | **done** |
+| **`customer_support` suite** — 20 cases (shipping, refunds, escalations, account issues, product FAQ), rubric: helpful / correct / polite / concise | **done** |
+| **`json_extraction` suite** — 15 cases (invoices, tickets, contracts, medical, logistics…), scored deterministically via JSON-schema validation | **done** |
+| **Pluggable agent docs** — `examples/README.md` documents HTTP and Python adapter contracts with copy-paste registration snippets | **done** |
 
 ### Run the API
 
@@ -87,7 +91,9 @@ make demo
 # Create tables
 python -m agent_eval_lab.db
 
-# Populate with sample data (idempotent)
+# Populate with sample data (idempotent):
+# registers customer_support_v1 / customer_support_v2,
+# customer_support suite (20 cases), json_extraction suite (15 cases)
 python scripts/seed.py
 ```
 
@@ -109,11 +115,18 @@ make lint     # lint + autofix with ruff
 make typecheck  # mypy strict check
 ```
 
+To use the bundled LangGraph example agents, install the optional extra:
+
+```bash
+pip install -e ".[examples]"
+export ANTHROPIC_API_KEY=sk-...
+```
+
 `make demo` starts both the FastAPI server (port 8000) and the Streamlit UI (port 8501).
 
 ---
 
-## Architecture (M1–M6 implemented)
+## Architecture (M1–M7 implemented)
 
 ```mermaid
 flowchart LR
@@ -125,6 +138,11 @@ flowchart LR
     Runner --> Det[Deterministic<br/>Scorers]
     Judge --> DB
     Det --> DB
+
+    subgraph examples/
+        V1[v1_brusque] -->|Python adapter| Runner
+        V2[v2_polite]  -->|Python adapter| Runner
+    end
 ```
 
 ---
@@ -137,7 +155,7 @@ flowchart LR
 - [x] M4 — LLM-as-judge (Claude) + deterministic scorers (regex, JSON schema, tool-call sequence); parallel scoring wired into runner
 - [x] M5 — Streamlit UI: dataset browser, run launcher with live progress bar, Plotly score heatmap
 - [x] M6 — trace drawer + A/B compare view
-- [ ] M9 — demo suite (customer-support bot + 20 test cases)
+- [x] M7 — example LangGraph agent (v1 brusque / v2 polite); `customer_support` suite (20 cases); `json_extraction` suite (15 cases, deterministic); pluggable-agent docs
 
 ---
 

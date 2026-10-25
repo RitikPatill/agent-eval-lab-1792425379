@@ -1,0 +1,256 @@
+suite:
+  name: json_extraction
+  description: "Extract structured JSON from natural-language text — 15 cases, mostly deterministic"
+
+cases:
+  - input:
+      role: user
+      content: |
+        Invoice #INV-2024-0042 from Acme Corp, dated 2024-03-15,
+        total amount $1,250.00. Contact: billing@acme.com
+    expected:
+      schema:
+        type: object
+        required: [invoice_number, date, amount]
+        properties:
+          invoice_number: {type: string}
+          date: {type: string}
+          amount: {type: number}
+    tags: ["extraction", "invoice"]
+
+  - input:
+      role: user
+      content: |
+        Support ticket from Jane Doe (jane.doe@example.com) submitted on 2024-03-20.
+        Issue: laptop screen flickering. Priority: high.
+    expected:
+      schema:
+        type: object
+        required: [name, email, issue, priority]
+        properties:
+          name: {type: string}
+          email: {type: string}
+          issue: {type: string}
+          priority: {type: string}
+    tags: ["extraction", "support_ticket"]
+
+  - input:
+      role: user
+      content: |
+        Meeting on 2024-04-01 at 10:00 AM between Alice Smith and Bob Jones.
+        Location: Conference Room B. Duration: 90 minutes.
+    expected:
+      schema:
+        type: object
+        required: [date, time, participants, location]
+        properties:
+          date: {type: string}
+          time: {type: string}
+          participants: {type: array, items: {type: string}}
+          location: {type: string}
+    tags: ["extraction", "calendar"]
+
+  - input:
+      role: user
+      content: |
+        Product: Wireless Headphones Model X200.
+        Price: $89.99. SKU: WH-X200-BLK. In stock: yes.
+    expected:
+      schema:
+        type: object
+        required: [product_name, price, sku]
+        properties:
+          product_name: {type: string}
+          price: {type: number}
+          sku: {type: string}
+          in_stock: {type: boolean}
+    tags: ["extraction", "product"]
+
+  - input:
+      role: user
+      content: |
+        Flight AA1234 departs New York (JFK) on 2024-05-10 at 08:30,
+        arrives in London (LHR) at 20:45. Seat: 12A.
+    expected:
+      schema:
+        type: object
+        required: [flight_number, departure_airport, arrival_airport, departure_time]
+        properties:
+          flight_number: {type: string}
+          departure_airport: {type: string}
+          arrival_airport: {type: string}
+          departure_time: {type: string}
+          seat: {type: string}
+    tags: ["extraction", "travel"]
+
+  - input:
+      role: user
+      content: |
+        Employee John Smith, ID EMP-0042, department: Engineering.
+        Start date: 2022-06-15. Manager: Sarah Johnson.
+    expected:
+      schema:
+        type: object
+        required: [name, employee_id, department, start_date]
+        properties:
+          name: {type: string}
+          employee_id: {type: string}
+          department: {type: string}
+          start_date: {type: string}
+          manager: {type: string}
+    tags: ["extraction", "hr"]
+
+  - input:
+      role: user
+      content: |
+        Order #ORD-9981 placed 2024-03-18 by customer Mark Lee.
+        Items: 2x Blue T-Shirt (L), 1x Black Jeans (32).
+        Shipping: express. Total: $67.50.
+    expected:
+      schema:
+        type: object
+        required: [order_id, customer_name, total]
+        properties:
+          order_id: {type: string}
+          customer_name: {type: string}
+          total: {type: number}
+          shipping_method: {type: string}
+    tags: ["extraction", "order"]
+
+  - input:
+      role: user
+      content: |
+        Contract between TechCorp (seller) and Retail Inc (buyer).
+        Value: $50,000. Signed 2024-01-31. Term: 12 months.
+    expected:
+      schema:
+        type: object
+        required: [seller, buyer, value, signed_date]
+        properties:
+          seller: {type: string}
+          buyer: {type: string}
+          value: {type: number}
+          signed_date: {type: string}
+          term_months: {type: number}
+    tags: ["extraction", "contract"]
+
+  - input:
+      role: user
+      content: |
+        Recipe: Chocolate Cake. Serves 8. Prep time: 20 minutes.
+        Cook time: 35 minutes. Difficulty: medium.
+    expected:
+      schema:
+        type: object
+        required: [recipe_name, servings, prep_time_minutes, cook_time_minutes]
+        properties:
+          recipe_name: {type: string}
+          servings: {type: number}
+          prep_time_minutes: {type: number}
+          cook_time_minutes: {type: number}
+          difficulty: {type: string}
+    tags: ["extraction", "recipe"]
+
+  - input:
+      role: user
+      content: |
+        Patient: Maria Garcia, DOB 1985-07-22.
+        Appointment: 2024-04-05 at 2:00 PM with Dr. Patel.
+        Reason: annual checkup.
+    expected:
+      schema:
+        type: object
+        required: [patient_name, appointment_date, doctor]
+        properties:
+          patient_name: {type: string}
+          date_of_birth: {type: string}
+          appointment_date: {type: string}
+          doctor: {type: string}
+          reason: {type: string}
+    tags: ["extraction", "medical"]
+
+  - input:
+      role: user
+      content: |
+        Event: Tech Summit 2024. Venue: City Convention Center.
+        Date: 2024-09-14. Capacity: 500. Ticket price: $150.
+    expected:
+      schema:
+        type: object
+        required: [event_name, venue, date, ticket_price]
+        properties:
+          event_name: {type: string}
+          venue: {type: string}
+          date: {type: string}
+          capacity: {type: number}
+          ticket_price: {type: number}
+    tags: ["extraction", "event"]
+
+  - input:
+      role: user
+      content: |
+        Vehicle: 2021 Toyota Camry, VIN 1HGCM82633A004352.
+        Color: silver. Mileage: 32,000. Owner: David Park.
+    expected:
+      schema:
+        type: object
+        required: [make, model, year, vin]
+        properties:
+          make: {type: string}
+          model: {type: string}
+          year: {type: number}
+          vin: {type: string}
+          mileage: {type: number}
+    tags: ["extraction", "vehicle"]
+
+  - input:
+      role: user
+      content: |
+        Property at 123 Main St, Austin TX 78701.
+        3 bedrooms, 2 bathrooms. List price: $425,000.
+        Agent: Lisa Carter, (512) 555-0199.
+    expected:
+      schema:
+        type: object
+        required: [address, bedrooms, bathrooms, list_price]
+        properties:
+          address: {type: string}
+          bedrooms: {type: number}
+          bathrooms: {type: number}
+          list_price: {type: number}
+          agent_name: {type: string}
+    tags: ["extraction", "real_estate"]
+
+  - input:
+      role: user
+      content: |
+        Shipment SHP-4421 dispatched 2024-03-22 via FedEx.
+        Tracking: 274899234501. Weight: 2.3 kg. Destination: Chicago, IL.
+    expected:
+      schema:
+        type: object
+        required: [shipment_id, carrier, tracking_number, destination]
+        properties:
+          shipment_id: {type: string}
+          carrier: {type: string}
+          tracking_number: {type: string}
+          destination: {type: string}
+          weight_kg: {type: number}
+    tags: ["extraction", "logistics"]
+
+  - input:
+      role: user
+      content: |
+        Bug report #BUG-512: login button unresponsive on Safari 17.
+        Reported by: tom@example.com on 2024-03-25. Severity: critical.
+    expected:
+      schema:
+        type: object
+        required: [bug_id, description, reporter_email, severity]
+        properties:
+          bug_id: {type: string}
+          description: {type: string}
+          reporter_email: {type: string}
+          reported_date: {type: string}
+          severity: {type: string}
+    tags: ["extraction", "bug_report"]
