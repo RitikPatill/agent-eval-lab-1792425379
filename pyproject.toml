@@ -40,6 +40,7 @@ examples = [
     "langchain-anthropic>=0.3.0",
     "langchain-core>=0.3.0",
 ]
+# Recording: install vhs separately — brew install vhs  OR  go install github.com/charmbracelet/vhs@latest
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/agent_eval_lab"]

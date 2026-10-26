@@ -16,6 +16,7 @@ def run(
     suite: str = typer.Option(..., help="Suite name"),
     agent: str = typer.Option(..., help="Agent name (must exist in DB)"),
     rubric: str = typer.Option(..., help="Rubric name"),
+    max_cases: int | None = typer.Option(None, help="Limit number of cases evaluated (useful for demos)"),
 ) -> None:
     """Execute an eval run synchronously."""
     from agent_eval_lab.db import get_session, init_db
@@ -52,7 +53,7 @@ def run(
     session.refresh(eval_run)
 
     typer.echo(f"Starting run {eval_run.id} ...")
-    execute_run(eval_run.id, session)  # type: ignore[arg-type]
+    execute_run(eval_run.id, session, max_cases=max_cases)  # type: ignore[arg-type]
 
     session.refresh(eval_run)
     typer.echo(f"Run {eval_run.id} finished with status: {eval_run.status}")
