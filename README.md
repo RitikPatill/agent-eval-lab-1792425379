@@ -6,6 +6,8 @@
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 ![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen)
 
+![Demo](docs/demo.gif)
+
 Point it at any agent (HTTP endpoint or Python callable), define test cases and rubrics, and get rubric-based scores from an LLM-as-judge plus deterministic checks (regex, JSON schema, tool-call assertions). Browse runs, inspect per-turn traces, and compare two agent versions side-by-side.
 
 ---
@@ -27,9 +29,11 @@ Agent Eval Lab gives you the smallest useful loop around that question — datas
 5. Tweak the agent's system prompt, run again. The **Compare** tab shows v1 vs v2 side-by-side with deltas: *politeness +0.4, conciseness -0.2*.
 6. Click a regressed case to see the full trace and judge's reasoning.
 
+![Compare view](docs/screenshot.png)
+
 ---
 
-## What works now (M7)
+## What works now (M8)
 
 | Item | Status |
 |---|---|
@@ -64,6 +68,13 @@ Agent Eval Lab gives you the smallest useful loop around that question — datas
 | **`customer_support` suite** — 20 cases (shipping, refunds, escalations, account issues, product FAQ), rubric: helpful / correct / polite / concise | **done** |
 | **`json_extraction` suite** — 15 cases (invoices, tickets, contracts, medical, logistics…), scored deterministically via JSON-schema validation | **done** |
 | **Pluggable agent docs** — `examples/README.md` documents HTTP and Python adapter contracts with copy-paste registration snippets | **done** |
+| **`docs/demo.gif`** — 90-second terminal walkthrough: launch → run → heatmap → tweak prompt → compare | **done** |
+| **`docs/screenshot.png`** — screenshot of the Compare view (delta heatmap + side-by-side trace inspector) | **done** |
+| **`docs/demo.tape`** — VHS tape script that drives the demo recording | **done** |
+| **`record_demo.sh`** — re-records `docs/demo.gif` via VHS; seeds DB, starts API, runs tape, exits cleanly | **done** |
+| **`make record`** — convenience target: `bash record_demo.sh` | **done** |
+| **`make demo` requires only `ANTHROPIC_API_KEY`** — verified on a fresh clone; installs deps + seeds DB automatically | **done** |
+| **Smoke test** — `tests/test_demo_smoke.py` validates the full `make demo` path end-to-end | **done** |
 
 ### Run the API
 
@@ -83,6 +94,13 @@ Or start both together:
 
 ```bash
 make demo
+```
+
+To re-record the demo GIF (requires [VHS](https://github.com/charmbracelet/vhs)):
+
+```bash
+make record
+# writes docs/demo.gif
 ```
 
 ### Init DB + seed
@@ -126,7 +144,7 @@ export ANTHROPIC_API_KEY=sk-...
 
 ---
 
-## Architecture (M1–M7 implemented)
+## Architecture (M1–M8 implemented)
 
 ```mermaid
 flowchart LR
@@ -156,6 +174,7 @@ flowchart LR
 - [x] M5 — Streamlit UI: dataset browser, run launcher with live progress bar, Plotly score heatmap
 - [x] M6 — trace drawer + A/B compare view
 - [x] M7 — example LangGraph agent (v1 brusque / v2 polite); `customer_support` suite (20 cases); `json_extraction` suite (15 cases, deterministic); pluggable-agent docs
+- [x] M8 — demo GIF (`docs/demo.gif`), compare-view screenshot (`docs/screenshot.png`), VHS tape + `record_demo.sh`, `make record` target, smoke test; `make demo` verified on a fresh clone with only `ANTHROPIC_API_KEY`
 
 ---
 

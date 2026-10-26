@@ -13,10 +13,11 @@ from agent_eval_lab.scorers import score_case_result
 logger = logging.getLogger(__name__)
 
 
-def execute_run(run_id: int, session: Session) -> None:
+def execute_run(run_id: int, session: Session, max_cases: int | None = None) -> None:
     """Load run → iterate suite cases → call adapter → persist CaseResult → score.
 
     Sets run.status = "running" then "done"/"failed".
+    ``max_cases`` limits the number of cases evaluated (useful for quick demos).
     """
     run = session.get(Run, run_id)
     if run is None:
@@ -36,7 +37,8 @@ def execute_run(run_id: int, session: Session) -> None:
 
     adapter = get_adapter(agent_version)
 
-    cases = session.exec(select(EvalCase).where(EvalCase.suite_id == run.suite_id)).all()
+    all_cases = session.exec(select(EvalCase).where(EvalCase.suite_id == run.suite_id)).all()
+    cases = list(all_cases)[:max_cases] if max_cases is not None else list(all_cases)
 
     try:
         for case in cases:
