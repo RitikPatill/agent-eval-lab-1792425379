@@ -1,14 +1,14 @@
 # Agent Eval Lab
 
+![Demo](docs/demo.gif)
+
 > Self-hosted, UI-first evaluation harness for AI agents.
+> Point it at any agent, define rubrics as YAML, and get LLM-as-judge + deterministic scores in one command.
+> Compare two agent versions with a delta heatmap — find regressions before they reach production.
 
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 ![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen)
-
-![Demo](docs/demo.gif)
-
-Point it at any agent (HTTP endpoint or Python callable), define test cases and rubrics, and get rubric-based scores from an LLM-as-judge plus deterministic checks (regex, JSON schema, tool-call assertions). Browse runs, inspect per-turn traces, and compare two agent versions side-by-side.
 
 ---
 
@@ -17,6 +17,33 @@ Point it at any agent (HTTP endpoint or Python callable), define test cases and 
 Most agent repos ship with vibes-based eval: "it worked when I tried it." In production, the hard problem is: *did my prompt change regress customer-support politeness? Did my new retrieval tool make the agent hallucinate more?*
 
 Agent Eval Lab gives you the smallest useful loop around that question — datasets, rubrics, runs, scores, diffs — without forcing you onto a paid SaaS or a 50-service observability stack.
+
+---
+
+## Quickstart
+
+```bash
+git clone https://github.com/your-org/agent-eval-lab && cd agent-eval-lab
+export ANTHROPIC_API_KEY=sk-...
+make demo     # seeds DB, starts API (port 8000) + Streamlit UI (port 8501)
+```
+
+Then open [http://localhost:8501](http://localhost:8501).
+
+For development:
+
+```bash
+make dev          # install dev deps + pre-commit hooks
+make test         # pytest
+make lint         # ruff check + autofix
+make typecheck    # mypy strict
+```
+
+To use the bundled LangGraph example agents:
+
+```bash
+pip install -e ".[examples]"
+```
 
 ---
 
@@ -33,118 +60,22 @@ Agent Eval Lab gives you the smallest useful loop around that question — datas
 
 ---
 
-## What works now (M8)
+## Features
 
-| Item | Status |
-|---|---|
-| `src/agent_eval_lab/` package layout | done |
-| `pyproject.toml` — hatchling build, Python 3.11+ | done |
-| Linting: `make lint` (ruff, line-length 100) | done |
-| Type checking: `make typecheck` (mypy strict) | done |
-| Tests: `make test` (pytest + pytest-asyncio) | done |
-| Pre-commit hooks (ruff + mypy on commit) | done |
-| CLI entry point (`agent-eval run --suite … --agent … --rubric …`) | done |
-| MIT license | done |
-| `make demo` — starts API (port 8000) + Streamlit UI (port 8501) | **done** |
-| **SQLModel data model** (Suite, EvalCase, Rubric, AgentVersion, Run, CaseResult, Score) | **done** |
-| **SQLite persistence** via `SQLModel.metadata.create_all` | **done** |
-| **Seed script** — loads both sample suites + both agent versions from YAML (idempotent) | **done** |
-| **FastAPI backend** — `/suites`, `/rubrics`, `/agents`, `/runs` CRUD endpoints | **done** |
-| **AgentOutput schema** (Pydantic) — normalised turns, tool calls, final response, latency, token count | **done** |
-| **Pydantic API schemas** — typed request bodies and response shapes for all endpoints | **done** |
-| **HTTPAdapter** — POST JSON to any HTTP agent endpoint; tolerates `response`, `message`, or turns shapes | **done** |
-| **PythonAdapter** — dynamically imports a `module:callable` and calls it in-process | **done** |
-| **Eval runner** — `execute_run()` iterates suite cases, calls adapter, persists `CaseResult` + `Score` rows | **done** |
-| **LLM-as-judge scorer** — calls Claude (configurable via `JUDGE_MODEL` env var) with structured rubric prompt, returns 1–5 score + reasoning | **done** |
-| **Deterministic scorers** — `regex` (pattern or `expected.contains`), `json_schema` (jsonschema validation), `tool_call_sequence` (subsequence check) | **done** |
-| **Parallel scoring** — criteria scored concurrently via `ThreadPoolExecutor`; DB writes stay on main thread | **done** |
-| **Streamlit UI** — sidebar nav (Suites / Rubrics / Agents / Runs), dataset browser, Launch Run form | **done** |
-| **Live progress bar** — polls `GET /runs/{id}` every 2 s while a run executes | **done** |
-| **Plotly heatmap** — rows = case IDs, columns = rubric criteria, colour = score 1–5 (RdYlGn) | **done** |
-| **Background execution** — `POST /runs` fires `execute_run` via FastAPI `BackgroundTasks` | **done** |
-| **Trace drawer** — select any case from the heatmap to inspect agent turns, tool calls, latency/token stats, and per-criterion scores + judge reasoning | **done** |
-| **Compare page** — pick two runs, view a diverging delta heatmap (RdYlGn, red = regression), side-by-side trace inspector for any case | **done** |
-| **`examples/` — LangGraph customer-support agent** in two versions: `v1_brusque` (terse) and `v2_polite` (empathetic), wired as Python-callable agents | **done** |
-| **`customer_support` suite** — 20 cases (shipping, refunds, escalations, account issues, product FAQ), rubric: helpful / correct / polite / concise | **done** |
-| **`json_extraction` suite** — 15 cases (invoices, tickets, contracts, medical, logistics…), scored deterministically via JSON-schema validation | **done** |
-| **Pluggable agent docs** — `examples/README.md` documents HTTP and Python adapter contracts with copy-paste registration snippets | **done** |
-| **`docs/demo.gif`** — 90-second terminal walkthrough: launch → run → heatmap → tweak prompt → compare | **done** |
-| **`docs/screenshot.png`** — screenshot of the Compare view (delta heatmap + side-by-side trace inspector) | **done** |
-| **`docs/demo.tape`** — VHS tape script that drives the demo recording | **done** |
-| **`record_demo.sh`** — re-records `docs/demo.gif` via VHS; seeds DB, starts API, runs tape, exits cleanly | **done** |
-| **`make record`** — convenience target: `bash record_demo.sh` | **done** |
-| **`make demo` requires only `ANTHROPIC_API_KEY`** — verified on a fresh clone; installs deps + seeds DB automatically | **done** |
-| **Smoke test** — `tests/test_demo_smoke.py` validates the full `make demo` path end-to-end | **done** |
-
-### Run the API
-
-```bash
-uvicorn agent_eval_lab.api:app --reload
-# → http://localhost:8000/docs
-```
-
-### Run the Streamlit UI
-
-```bash
-make ui
-# → http://localhost:8501
-```
-
-Or start both together:
-
-```bash
-make demo
-```
-
-To re-record the demo GIF (requires [VHS](https://github.com/charmbracelet/vhs)):
-
-```bash
-make record
-# writes docs/demo.gif
-```
-
-### Init DB + seed
-
-```bash
-# Create tables
-python -m agent_eval_lab.db
-
-# Populate with sample data (idempotent):
-# registers customer_support_v1 / customer_support_v2,
-# customer_support suite (20 cases), json_extraction suite (15 cases)
-python scripts/seed.py
-```
-
-### Run an eval from the CLI
-
-```bash
-agent-eval run --suite customer_support --agent my_agent --rubric customer_support_rubric
-```
+- **Datasets** — define test cases (input, expected behavior, optional ground truth) as YAML
+- **Rubrics as YAML** — criteria + 1–5 scoring guidance per criterion; version-control your eval criteria
+- **LLM-as-judge scorer** — calls Claude (configurable via `JUDGE_MODEL`) with a structured rubric prompt; returns score 1–5 + reasoning
+- **Deterministic scorers** — regex match, JSON schema validation, tool-call-sequence assertions
+- **Parallel scoring** — criteria scored concurrently via `ThreadPoolExecutor`
+- **HTTP + Python adapters** — point at any `POST /chat` endpoint or a `module:callable` in-process
+- **Streamlit UI** — dataset browser, rubric editor, run launcher, live progress bar, Plotly score heatmap
+- **Trace drawer** — inspect agent turns, tool calls, latency, token stats, and per-criterion judge reasoning
+- **A/B compare view** — diverging delta heatmap + side-by-side trace inspector for regressed cases
+- **SQLite persistence** — entire eval history is a single file you can commit alongside your agent
 
 ---
 
-## Quickstart
-
-```bash
-git clone https://github.com/your-org/agent-eval-lab && cd agent-eval-lab
-make dev      # install dev deps + install pre-commit hooks
-make test     # run the test suite
-make lint     # lint + autofix with ruff
-make typecheck  # mypy strict check
-```
-
-To use the bundled LangGraph example agents, install the optional extra:
-
-```bash
-pip install -e ".[examples]"
-export ANTHROPIC_API_KEY=sk-...
-```
-
-`make demo` starts both the FastAPI server (port 8000) and the Streamlit UI (port 8501).
-
----
-
-## Architecture (M1–M8 implemented)
+## Architecture
 
 ```mermaid
 flowchart LR
@@ -163,6 +94,8 @@ flowchart LR
     end
 ```
 
+→ See [ARCHITECTURE.md](ARCHITECTURE.md) for a full walkthrough of the package layout and key design decisions.
+
 ---
 
 ## Roadmap
@@ -175,6 +108,18 @@ flowchart LR
 - [x] M6 — trace drawer + A/B compare view
 - [x] M7 — example LangGraph agent (v1 brusque / v2 polite); `customer_support` suite (20 cases); `json_extraction` suite (15 cases, deterministic); pluggable-agent docs
 - [x] M8 — demo GIF (`docs/demo.gif`), compare-view screenshot (`docs/screenshot.png`), VHS tape + `record_demo.sh`, `make record` target, smoke test; `make demo` verified on a fresh clone with only `ANTHROPIC_API_KEY`
+- [x] M9 — polish: readme + architecture + roadmap
+
+### Future work
+
+- [ ] CI integration — GitHub Actions workflow that runs `agent-eval run` on every PR and posts score deltas as a PR comment
+- [ ] Cost tracking — record token usage + estimated USD per run; surface total cost in the heatmap tooltip
+- [ ] Pairwise judging — present judge with two agent outputs simultaneously; Bradley-Terry ranking from pair comparisons
+- [ ] OpenTelemetry export — emit run/case/score spans to any OTLP collector (Jaeger, Grafana Tempo) for trace correlation
+
+---
+
+→ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add new adapters and scorers.
 
 ---
 
